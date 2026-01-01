@@ -1,0 +1,50 @@
+/* Tailwind/Bootstrap 기반으로 UI를 재구성하고, 여기엔 “앱 느낌”을 내는 작은 디테일만 둡니다. */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+/* 배경 메쉬 + 은은한 그레인 */
+.bg-mesh {
+  background:
+    radial-gradient(900px 520px at 12% 8%, rgba(99, 102, 241, 0.35), transparent 60%),
+    radial-gradient(820px 560px at 88% 14%, rgba(16, 185, 129, 0.22), transparent 62%),
+    radial-gradient(700px 600px at 55% 92%, rgba(236, 72, 153, 0.14), transparent 55%),
+    linear-gradient(180deg, #020617, #02030a 75%);
+}
+
+.grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  opacity: 0.22;
+}
+
+/* 유리 느낌 카드 */
+.glass {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  backdrop-filter: blur(12px);
+}
+
+/* 스크롤바(옵션) */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  border: 2px solid rgba(2, 6, 23, 1);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}

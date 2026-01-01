@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Todo & 일정 관리</title>
+
+  <!-- Bootstrap (Modal/Toast/UI 컴포넌트) -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  />
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    rel="stylesheet"
+  />
+
+  <!-- Tailwind (레이아웃/유틸). Bootstrap과 충돌을 줄이기 위해 preflight를 끕니다. -->
+  <script>
+    tailwind.config = {
+      corePlugins: { preflight: false },
+      theme: {
+        extend: {
+          boxShadow: {
+            glow: "0 0 0 1px rgba(255,255,255,.10), 0 18px 50px rgba(0,0,0,.45)",
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- 작은 디테일(배경/그레인/글래스) -->
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body class="bg-mesh grain min-h-screen text-slate-100">
+  <div class="mx-auto max-w-6xl px-4 py-10">
+    <header class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="h-11 w-11 rounded-2xl bg-gradient-to-br from-indigo-500/70 via-fuchsia-500/50 to-emerald-400/40 ring-1 ring-white/10 shadow-glow flex items-center justify-center">
+            <i class="bi bi-check2-square text-white text-xl"></i>
+          </div>
+          <div>
+            <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Todo & 일정 관리</h1>
+            <p class="mt-1 text-sm text-slate-300 leading-relaxed">
+              오늘 할 일과 일정(마감)을 한 곳에. <span class="text-slate-200 font-semibold">오늘 · 예정 · 지연</span>을 자동 분류해요.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-2">
+        <div id="nowPill" class="glass rounded-full px-4 py-2 text-sm text-slate-200 flex items-center gap-2 shadow-glow">
+          <i class="bi bi-clock text-slate-300"></i>
+          <b class="font-semibold">—</b>
+          <span id="nowText" class="text-slate-300">로딩 중…</span>
+        </div>
+
+        <button id="gTasksBtn" type="button" class="glass rounded-xl px-3 py-2 text-sm font-semibold hover:opacity-90 transition shadow-glow inline-flex items-center gap-2">
+          <i class="bi bi-google"></i>
+          Google Tasks
+        </button>
+
+        <button id="notifPermBtn" type="button" class="glass rounded-xl px-3 py-2 text-sm font-semibold hover:opacity-90 transition shadow-glow inline-flex items-center gap-2">
+          <i class="bi bi-bell"></i>
+          알림 허용
+        </button>
+
+        <button id="exportBtn" type="button" class="glass rounded-xl px-3 py-2 text-sm font-semibold hover:opacity-90 transition shadow-glow inline-flex items-center gap-2">
+          <i class="bi bi-download"></i>
+          내보내기
+        </button>
+
+        <label class="glass rounded-xl px-3 py-2 text-sm font-semibold hover:opacity-90 transition shadow-glow inline-flex items-center gap-2 cursor-pointer">
+          <i class="bi bi-upload"></i>
+          가져오기
+          <input id="importInput" type="file" accept="application/json" class="hidden" />
+        </label>
+
+        <button id="resetBtn" type="button" class="rounded-xl px-3 py-2 text-sm font-semibold bg-rose-500/15 ring-1 ring-rose-300/20 hover:bg-rose-500/20 transition shadow-glow inline-flex items-center gap-2">
+          <i class="bi bi-trash3"></i>
+          초기화
+        </button>
+      </div>
+    </header>
+
+    <main class="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <section class="lg:col-span-8 space-y-6" aria-label="할 일">
+        <!-- Add form -->
+        <div class="glass rounded-2xl p-5 shadow-glow">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-bold tracking-tight">새 할 일</h2>
+              <p class="mt-1 text-sm text-slate-300">빠르게 입력하고, 마감/우선순위로 정리하세요.</p>
+            </div>
+            <div class="text-xs text-slate-400">Enter로 추가</div>
+          </div>
+
+          <form id="todoForm" class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-3" autocomplete="off">
+            <div class="md:col-span-6">
+              <label for="title" class="text-xs text-slate-300">할 일</label>
+              <input id="title" name="title" required placeholder="예) 운동 30분, 보고서 초안…" class="mt-1 w-full rounded-xl bg-slate-950/40 ring-1 ring-white/10 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+            </div>
+            <div class="md:col-span-3">
+              <label for="date" class="text-xs text-slate-300">날짜</label>
+              <input id="date" name="date" type="date" class="mt-1 w-full rounded-xl bg-slate-950/40 ring-1 ring-white/10 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+            </div>
+            <div class="md:col-span-3">
+              <label for="time" class="text-xs text-slate-300">시간</label>
+              <input id="time" name="time" type="time" class="mt-1 w-full rounded-xl bg-slate-950/40 ring-1 ring-white/10 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+            </div>
+            <div class="md:col-span-4">
+              <label for="priority" class="text-xs text-slate-300">우선순위</label>
+              <select id="priority" name="priority" class="mt-1 w-full rounded-xl bg-slate-950/40 ring-1 ring-white/10 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-400/40">
+                <option value="0">낮음</option>
+                <option value="1" selected>보통</option>
+                <option value="2">높음</option>
+              </select>
+            </div>
+            <div class="md:col-span-4">
+              <label for="category" class="text-xs text-slate-300">카테고리</label>
+              <input id="category" name="category" placeholder="예) 업무, 개인, 건강" class="mt-1 w-full rounded-xl bg-slate-950/40 ring-1 ring-white/10 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+            </div>
+            <div class="md:col-span-4">
+              <label for="notes" class="text-xs text-slate-300">메모</label>
+              <input id="notes" name="notes" placeholder="예) 링크/체크포인트…" class="mt-1 w-full rounded-xl bg-slate-950/40 ring-1 ring-white/10 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+            </div>
+
+            <div class="md:col-span-4">
+              <label for="repeat" class="text-xs text-slate-300">반복</label>
+              <select id="repeat" name="repeat" class="mt-1 w-full rounded-xl bg-slate-950/40 ring-1 ring-white/10 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-400/40">
+                <option value="none" selected>반복 없음</option>
+                <option value="daily">매일</option>
+                <option value="weekly">매주</option>
+                <option value="monthly">매월</option>
+              </select>
+              <div class="mt-1 text-[11px] text-slate-400">반복을 쓰려면 날짜가 필요해요(시작일).</div>
+            </div>
+            <div class="md:col-span-4">
+              <label class="text-xs text-slate-300">알림</label>
+              <div class="mt-1 flex items-center gap-2">
+                <label class="inline-flex items-center gap-2 rounded-xl bg-slate-950/40 ring-1 ring-white/10 px-3 py-2 text-sm text-slate-100">
+                  <input id="notifyEnabled" type="checkbox" class="form-check-input m-0" />
+                  마감 전
+                </label>
+                <select id="notifyMins" class="flex-1 rounded-xl bg-slate-950/40 ring-1 ring-white/10 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-400/40">
+                  <option value="0">0분</option>
+                  <option value="5" selected>5분</option>
+                  <option value="10">10분</option>
+                  <option value="30">30분</option>
+                  <option value="60">60분</option>
+                </select>
+              </div>
+              <div class="mt-1 text-[11px] text-slate-400">브라우저 알림 권한이 필요해요.</div>
+            </div>
+
+            <div class="md:col-span-12 flex flex-wrap items-center gap-2 pt-1">
+              <button type="submit" class="rounded-xl px-4 py-2 text-sm font-semibold bg-gradient-to-r from-indigo-500/80 to-fuchsia-500/70 ring-1 ring-white/10 hover:opacity-95 transition shadow-glow inline-flex items-center gap-2">
+                <i class="bi bi-plus-lg"></i>
+                추가
+              </button>
+              <button id="clearFormBtn" type="button" class="glass rounded-xl px-3 py-2 text-sm font-semibold hover:opacity-90 transition shadow-glow">
+                입력 초기화
+              </button>
+              <div id="quickHint" class="text-xs text-slate-400">
+                팁: 날짜/시간이 없으면 “일반 Todo”로 저장됩니다.
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- List -->
+        <div class="glass rounded-2xl p-5 shadow-glow" aria-label="목록">
+          <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 class="text-lg font-bold tracking-tight">목록</h2>
+              <div id="countText" class="mt-1 text-sm text-slate-300">—</div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="seg inline-flex rounded-xl bg-slate-950/35 ring-1 ring-white/10 p-1" role="tablist" aria-label="필터">
+                <button type="button" data-filter="all" class="filter-btn px-3 py-2 text-xs font-semibold rounded-lg">전체</button>
+                <button type="button" data-filter="today" class="filter-btn px-3 py-2 text-xs font-semibold rounded-lg">오늘</button>
+                <button type="button" data-filter="upcoming" class="filter-btn px-3 py-2 text-xs font-semibold rounded-lg">예정</button>
+                <button type="button" data-filter="overdue" class="filter-btn px-3 py-2 text-xs font-semibold rounded-lg">지연</button>
+                <button type="button" data-filter="done" class="filter-btn px-3 py-2 text-xs font-semibold rounded-lg">완료</button>
+              </div>
+
+              <div class="relative">
+                <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input id="search" placeholder="검색" class="w-[220px] md:w-[260px] rounded-xl bg-slate-950/40 ring-1 ring-white/10 pl-9 pr-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/40" />
+              </div>
+
+              <select id="sort" class="rounded-xl bg-slate-950/40 ring-1 ring-white/10 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-400/40">
+                <option value="dueAsc" selected>마감 빠른순</option>
+                <option value="dueDesc">마감 느린순</option>
+                <option value="priDesc">우선순위 높은순</option>
+                <option value="createdDesc">최신 추가순</option>
+                <option value="manual">수동 정렬(드래그)</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="list" class="mt-4 space-y-3" aria-live="polite"></div>
+          <div id="emptyHint" class="hidden mt-4 text-sm text-slate-400">
+            표시할 항목이 없어요. 위에서 할 일을 추가해보세요.
+          </div>
+        </div>
+      </section>
+
+      <aside class="lg:col-span-4 space-y-6" aria-label="일정 요약">
+        <div class="glass rounded-2xl p-5 shadow-glow">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-bold tracking-tight">일정 요약</h2>
+              <p class="mt-1 text-sm text-slate-300">다가오는 7일을 달력처럼 묶어 보여줘요.</p>
+            </div>
+            <button id="markTodayBtn" type="button" class="glass rounded-xl px-3 py-2 text-sm font-semibold hover:opacity-90 transition shadow-glow inline-flex items-center gap-2">
+              <i class="bi bi-calendar-event"></i>
+              오늘로
+            </button>
+          </div>
+
+          <div class="mt-4 grid grid-cols-3 gap-3" aria-label="통계">
+            <div class="rounded-2xl bg-slate-950/35 ring-1 ring-white/10 p-3">
+              <div class="text-xs text-slate-400">전체</div>
+              <div id="kpiTotal" class="mt-1 text-2xl font-extrabold tracking-tight">0</div>
+            </div>
+            <div class="rounded-2xl bg-slate-950/35 ring-1 ring-white/10 p-3">
+              <div class="text-xs text-slate-400">오늘</div>
+              <div id="kpiToday" class="mt-1 text-2xl font-extrabold tracking-tight">0</div>
+            </div>
+            <div class="rounded-2xl bg-slate-950/35 ring-1 ring-white/10 p-3">
+              <div class="text-xs text-slate-400">지연</div>
+              <div id="kpiOverdue" class="mt-1 text-2xl font-extrabold tracking-tight">0</div>
+            </div>
+          </div>
+
+          <div class="mt-5 flex items-center justify-between">
+            <div class="text-sm font-semibold text-slate-200">다가오는 7일</div>
+            <div class="text-xs text-slate-400">편집은 ✏️</div>
+          </div>
+          <div id="calendar" class="mt-3 space-y-3"></div>
+        </div>
+
+        <div class="glass rounded-2xl p-5 shadow-glow">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-bold tracking-tight">반복 일정</h2>
+              <p class="mt-1 text-sm text-slate-300">반복 템플릿을 관리해요(편집/삭제).</p>
+            </div>
+          </div>
+          <div id="recurringList" class="mt-4 space-y-2"></div>
+          <div id="recurringEmpty" class="hidden mt-3 text-sm text-slate-400">등록된 반복 일정이 없어요.</div>
+        </div>
+
+        <div class="glass rounded-2xl p-5 shadow-glow text-sm text-slate-300">
+          <div class="font-semibold text-slate-100">사용 팁</div>
+          <ul class="mt-2 space-y-1 list-disc list-inside">
+            <li>체크: 완료/미완료 토글</li>
+            <li>✏️: Bootstrap 모달로 편집</li>
+            <li>지연: 마감이 지났고 미완료인 항목</li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Bootstrap Toast -->
+  <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+    <div id="appToast" class="toast text-bg-dark border-0" role="status" aria-live="polite" aria-atomic="true">
+      <div class="d-flex">
+        <div id="toastBody" class="toast-body">알림</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="닫기"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Modal: Edit -->
+  <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content bg-dark text-light border border-secondary-subtle">
+        <div class="modal-header border-secondary-subtle">
+          <h5 class="modal-title" id="editModalLabel">할 일 편집</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="닫기"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editForm" class="row g-3">
+            <div class="col-md-6">
+              <label for="editTitle" class="form-label">할 일</label>
+              <input id="editTitle" class="form-control bg-black text-light border-secondary-subtle" required />
+            </div>
+            <div class="col-md-3">
+              <label for="editDate" class="form-label">날짜</label>
+              <input id="editDate" type="date" class="form-control bg-black text-light border-secondary-subtle" />
+            </div>
+            <div class="col-md-3">
+              <label for="editTime" class="form-label">시간</label>
+              <input id="editTime" type="time" class="form-control bg-black text-light border-secondary-subtle" />
+            </div>
+            <div class="col-md-4">
+              <label for="editPriority" class="form-label">우선순위</label>
+              <select id="editPriority" class="form-select bg-black text-light border-secondary-subtle">
+                <option value="0">낮음</option>
+                <option value="1">보통</option>
+                <option value="2">높음</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="editCategory" class="form-label">카테고리</label>
+              <input id="editCategory" class="form-control bg-black text-light border-secondary-subtle" />
+            </div>
+            <div class="col-md-4">
+              <label for="editNotes" class="form-label">메모</label>
+              <input id="editNotes" class="form-control bg-black text-light border-secondary-subtle" />
+            </div>
+            <div class="col-md-4">
+              <label for="editRepeat" class="form-label">반복</label>
+              <select id="editRepeat" class="form-select bg-black text-light border-secondary-subtle">
+                <option value="none">반복 없음</option>
+                <option value="daily">매일</option>
+                <option value="weekly">매주</option>
+                <option value="monthly">매월</option>
+              </select>
+              <div class="form-text text-secondary">반복은 “템플릿”에 적용됩니다(인스턴스는 반복 변경 불가).</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">알림</label>
+              <div class="d-flex gap-2 align-items-center">
+                <div class="form-check">
+                  <input id="editNotifyEnabled" class="form-check-input" type="checkbox" />
+                  <label class="form-check-label" for="editNotifyEnabled">사용</label>
+                </div>
+                <select id="editNotifyMins" class="form-select bg-black text-light border-secondary-subtle">
+                  <option value="0">0분</option>
+                  <option value="5" selected>5분</option>
+                  <option value="10">10분</option>
+                  <option value="30">30분</option>
+                  <option value="60">60분</option>
+                </select>
+              </div>
+              <div class="form-text text-secondary">마감 시간 기준 “n분 전”에 알림을 띄워요.</div>
+            </div>
+            <div class="col-12">
+              <div class="form-check">
+                <input id="editDone" class="form-check-input" type="checkbox" />
+                <label class="form-check-label" for="editDone">완료로 표시</label>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer border-secondary-subtle">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">취소</button>
+          <button id="editSaveBtn" type="button" class="btn btn-primary">저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Modal: Google Tasks -->
+  <div class="modal fade" id="gTasksModal" tabindex="-1" aria-labelledby="gTasksModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content bg-dark text-light border border-secondary-subtle">
+        <div class="modal-header border-secondary-subtle">
+          <h5 class="modal-title" id="gTasksModalLabel">Google Tasks 연동</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="닫기"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-secondary bg-black border-secondary-subtle text-light">
+            <div class="fw-semibold mb-1">처음 한 번만 설정</div>
+            <div class="small text-secondary">
+              Google Cloud Console에서 OAuth Client ID를 만든 뒤 아래에 붙여넣으세요.
+              (Client Secret은 필요 없어요. 프론트엔드에서는 넣으면 안 됩니다.)
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12">
+              <label for="gClientId" class="form-label">Google OAuth Client ID</label>
+              <input id="gClientId" class="form-control bg-black text-light border-secondary-subtle" placeholder="xxxxxx.apps.googleusercontent.com" />
+              <div class="form-text text-secondary">
+                Authorized JavaScript origins에 현재 실행 주소(예: http://localhost:3000)를 추가해야 해요.
+              </div>
+            </div>
+
+            <div class="col-md-7">
+              <label for="gTasklist" class="form-label">Task list</label>
+              <select id="gTasklist" class="form-select bg-black text-light border-secondary-subtle">
+                <option value="" selected>연결 후 불러올 수 있어요</option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">상태</label>
+              <div id="gStatus" class="form-control bg-black text-light border-secondary-subtle" style="height:auto; min-height:38px;">
+                연결 안 됨
+              </div>
+            </div>
+
+            <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+              <button id="gSaveCfgBtn" type="button" class="btn btn-outline-light">설정 저장</button>
+              <button id="gConnectBtn" type="button" class="btn btn-primary">연결(로그인)</button>
+              <button id="gDisconnectBtn" type="button" class="btn btn-outline-light">연결 해제</button>
+              <div class="vr"></div>
+              <button id="gImportBtn" type="button" class="btn btn-outline-light">Google → 앱 가져오기</button>
+              <button id="gExportBtn" type="button" class="btn btn-outline-light">앱 → Google 내보내기</button>
+              <button id="gSyncBtn" type="button" class="btn btn-outline-info">동기화(가져오기+내보내기)</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary-subtle">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS (Modal/Toast) -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"
+  ></script>
+
+  <!-- Google Identity Services (OAuth token) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <script src="./style.js"></script>
+</body>
+</html>
+
