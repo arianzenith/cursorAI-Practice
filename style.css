@@ -70,6 +70,12 @@ header p {
     font-size: 0.95em;
 }
 
+.char-count {
+    font-weight: normal;
+    color: #6c757d;
+    font-size: 0.85em;
+}
+
 .form-group input,
 .form-group select,
 .form-group textarea {
@@ -332,6 +338,22 @@ header p {
 
 .empty-state p {
     font-size: 1.1em;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(102, 126, 234, 0.3);
+    border-radius: 50%;
+    border-top-color: #667eea;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 @media (max-width: 768px) {
